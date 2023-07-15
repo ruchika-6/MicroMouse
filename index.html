@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Micromouse</title>
+
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="wrap">Number of rows:<input type="number" id="n" name="n" min="1"></div>
+            <div class="wrap">Number of columns:<input type="number" id="m" name="m" min="1"></div>
+        </div>
+        <div class="row">
+            <div class="wrap">Source Row: <input type="number" id="sr" placeholder="0 indexed"></div>
+            <div class="wrap">Source Column:<input type="number" id="sc" placeholder="0 indexed"></div>
+        </div>
+        <div class="row">
+            <div class="wrap">Destination Row: <input type="number" id="dr" placeholder="0 indexed"></div>
+            <div class="wrap">Destination Column: <input type="number" id="dc" placeholder="0 indexed"></div>
+        </div>
+    <button>Submit</button>
+    (Get different obstacles on each Submit)
+    <div id="grid-container"></div>
+    </div>
+</body> 
+<script>
+    const button = document.querySelector("button");
+    
+    button.onclick = ()=>{
+        const n = parseInt(document.getElementById("n").value);
+        const m = parseInt(document.getElementById("m").value);
+        const sr = parseInt(document.getElementById("sr").value);
+        const sc = parseInt(document.getElementById("sc").value);
+        const dr = parseInt(document.getElementById("dr").value);
+        const dc = parseInt(document.getElementById("dc").value);
+        const gridContainer = document.getElementById("grid-container");
+        let gridHTML = "";
+        var grid = [];
+        
+        for (let i = 0; i < n; i++) {
+            var row = [];
+            for (let j = 0; j < m; j++) {
+                let val;
+                //Obstructions are generated randomly with 30% probability.
+                if (Math.random() < 0.7) {
+                    val = 0;
+                } else {
+                    val = 1;
+                }
+                if((i == sr && j == sc) || (i == dr && j == dc))
+                    val = 0;
+                if( val == 1)
+                {
+                    row.push(1);
+                }
+                else
+                {
+                    row.push(0);
+                }
+            }
+            grid.push(row);
+        }
+        getPath(n,m,sr,sc,dr,dc,grid);
+    }
+
+    function getPath(n,m,sr,sc,dr,dc,grid){
+    var visited = new Array(n), parent_x = new Array(n), parent_y = new Array(n);
+    for(var i=0;i<n;i++){
+        visited[i] = new Array(m);
+        parent_x[i] = new Array(m);
+        parent_y[i] = new Array(m);
+    }
+
+    for(var i=0;i<n;i++){
+        for(var j=0;j<m;j++){
+            visited[i][j] = false;
+            parent_x[i][j] = -1;
+            parent_y[i][j] = -1;
+        }
+    }
+    
+    var queue = [];
+    queue.push([sr, sc]);
+    visited[sr][sc] = true;
+
+    var dx = [1, -1, 0, 0];
+    var dy = [0, 0, 1, -1];
+
+    while(queue.length > 0){
+        var thisCell = queue.shift();
+        var x = Number(thisCell[0]), y = Number(thisCell[1]);
+        for(var i=0;i<4;i++){
+            if(x + dx[i] >=0 && y + dy[i] >=0 && x+dx[i] < n 
+                && y + dy[i] < m && !visited[x + dx[i]][y + dy[i]]
+                    && !grid[x + dx[i]][y + dy[i]]){
+                    queue.push([x + dx[i], y + dy[i]]);
+                    visited[x + dx[i]][y + dy[i]] = true;
+                    parent_x[x + dx[i]][y + dy[i]] = x;
+                    parent_y[x + dx[i]][y + dy[i]] = y;
+                }
+        }
+
+    }
+
+    var path=[[]];
+    var x = Number(dr), y = Number(dc);
+
+    while(!(x===Number(sr) && y===Number(sc))){
+        path.push([x, y]);
+        var temp_x = Number(x) ,temp_y = Number(y);
+        x = parent_x[temp_x][temp_y];
+        y = parent_y[temp_x][temp_y];
+        if(x == -1 || y == -1)
+        {
+            document.getElementById("grid-container").innerHTML = "<h1>Path Not Found<h1>";
+            alert("No path exists. Please Submit again")
+            return;
+        }
+    }
+
+    path.push([Number(sr),Number(sc)]);
+    path.reverse();
+
+    console.log(path);
+
+    path.pop();
+    setPath(path,n,m,grid,sr,sc,dr,dc);
+}
+
+function setPath(path,n,m,grid,sr,sc,dr,dc)
+{
+    const gridContainer = document.getElementById("grid-container");
+
+        let gridHTML = "";
+
+        for (let i = 0; i < n; i++) {
+            gridHTML += "<div class='grid-row'>";
+            for (let j = 0; j < m; j++) {
+                if( grid[i][j] == 1)
+                {
+                    gridHTML += `<div class='grid-cell col' id='${i}-${j}'></div>`;
+                }
+                else
+                {
+                    gridHTML += `<div class='grid-cell' id='${i}-${j}'></div>`;
+                }
+            }
+            gridHTML += "</div>";
+        }
+        gridContainer.innerHTML = gridHTML;
+
+        for(i = 0;i<path.length;i++)
+        {
+            let ind = `${path[i][0]}-${path[i][1]}`;
+            if(path[i][0] == sr && path[i][1] == sc)
+            {
+                setTimeout(document.getElementById(ind).classList.add("start"),20000);
+            }
+            else if(path[i][0] == dr && path[i][1] == dc)
+                setTimeout(document.getElementById(ind).classList.add("end"),20000);
+            else
+                setTimeout(document.getElementById(ind).classList.add("path"),20000);
+        }
+}
+
+</script>
+</html>
